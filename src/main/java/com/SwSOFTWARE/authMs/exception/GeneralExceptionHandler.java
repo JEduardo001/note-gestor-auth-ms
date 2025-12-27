@@ -1,7 +1,6 @@
 package com.SwSOFTWARE.authMs.exception;
 
 import com.SwSOFTWARE.authMs.dto.api.DtoResponseApiWithoutData;
-import com.SwSOFTWARE.authMs.exception.user.UserEmailAlreadyInUseException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;

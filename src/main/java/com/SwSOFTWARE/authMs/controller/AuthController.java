@@ -1,9 +1,10 @@
 package com.SwSOFTWARE.authMs.controller;
 
 import com.SwSOFTWARE.authMs.conostants.ApiBase;
-import com.SwSOFTWARE.authMs.dto.auth.DtoCreateUser;
+import com.SwSOFTWARE.authMs.dto.auth.DtoCreateAuth;
 import com.SwSOFTWARE.authMs.dto.api.DtoResponseApiWithData;
 import com.SwSOFTWARE.authMs.dto.auth.DtoLogin;
+import com.SwSOFTWARE.authMs.dto.auth.DtoUpdateAuth;
 import com.SwSOFTWARE.authMs.service.AuthService;
 import com.SwSOFTWARE.authMs.service.JwtService;
 import jakarta.validation.Valid;
@@ -28,11 +29,20 @@ public class AuthController {
         this.authenticationManager = authenticationManager;
     }
 
-    @PostMapping()
-    public ResponseEntity<DtoResponseApiWithData> createUser(@Valid @RequestBody DtoCreateUser request){
+    @GetMapping()
+    public ResponseEntity<DtoResponseApiWithData> getAllAuths(@RequestParam Integer page, @RequestParam Integer size){
+        return ResponseEntity.status(HttpStatus.OK).body(new DtoResponseApiWithData<>(
+                HttpStatus.OK.value(),
+                "Auths obtained",
+                authService.getAllAuth(page,size)
+        ));
+    }
+
+    @PostMapping("/register")
+    public ResponseEntity<DtoResponseApiWithData> createAuth(@Valid @RequestBody DtoCreateAuth request){
         return ResponseEntity.status(HttpStatus.CREATED).body(new DtoResponseApiWithData(
                 HttpStatus.CREATED.value(),
-                "User Created",
+                "Auth Created",
                 authService.createUser(request)
         ));
     }
@@ -46,29 +56,29 @@ public class AuthController {
 
         String token = jwtService.createToken(request.username());
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(new DtoResponseApiWithData(
-                HttpStatus.CREATED.value(),
+        return ResponseEntity.status(HttpStatus.OK).body(new DtoResponseApiWithData(
+                HttpStatus.OK.value(),
                 "logged",
                 token
         ));
     }
 
 
-    @GetMapping("/t")
-    public ResponseEntity<DtoResponseApiWithData> test(){
-        return ResponseEntity.status(HttpStatus.CREATED).body(new DtoResponseApiWithData(
-                HttpStatus.CREATED.value(),
-                "Hola desde auth con autenticacion requerida",
-                null
+    @GetMapping("/{idAuth}")
+    public ResponseEntity<DtoResponseApiWithData> getAuth(@PathVariable Long idAuth){
+        return ResponseEntity.status(HttpStatus.OK).body(new DtoResponseApiWithData<>(
+                HttpStatus.OK.value(),
+                "Auth obtained",
+                authService.getAuth(idAuth)
         ));
     }
 
-    @GetMapping()
-    public ResponseEntity<DtoResponseApiWithData> testLibre(){
-        return ResponseEntity.status(HttpStatus.CREATED).body(new DtoResponseApiWithData(
-                HttpStatus.CREATED.value(),
-                "Hola desde auth sin auth",
-                null
+    @PutMapping()
+    public ResponseEntity<DtoResponseApiWithData> update(@Valid @RequestBody DtoUpdateAuth request){
+        return ResponseEntity.status(HttpStatus.OK).body(new DtoResponseApiWithData(
+                HttpStatus.OK.value(),
+                "Auth updated",
+                authService.updateAuth(request)
         ));
     }
 

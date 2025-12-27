@@ -5,7 +5,7 @@ import jakarta.validation.constraints.*;
 
 import java.util.List;
 
-public record DtoCreateUser(
+public record DtoCreateAuth(
         @NotBlank
         String username,
         @NotBlank

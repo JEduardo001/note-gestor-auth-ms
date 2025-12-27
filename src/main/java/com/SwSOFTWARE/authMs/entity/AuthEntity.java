@@ -7,6 +7,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
 
@@ -15,7 +16,11 @@ import java.util.Set;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@Table(name = "auth")
+@Table(name = "auth", indexes = {
+        @Index(name = "indexUsername", columnList = "username"),
+        @Index(name = "indexEmail", columnList = "email")
+
+})
 public class AuthEntity {
 
    @Id
@@ -25,6 +30,8 @@ public class AuthEntity {
    private String password;
    private String email;
    private boolean active;
+   private LocalDateTime createdAt;
+   private LocalDateTime disabledAt;
    @ManyToMany
    @JoinTable(
            name = "roles_auth",
