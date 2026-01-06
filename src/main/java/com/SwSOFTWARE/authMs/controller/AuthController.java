@@ -1,6 +1,7 @@
 package com.SwSOFTWARE.authMs.controller;
 
 import com.SwSOFTWARE.authMs.conostants.ApiBase;
+import com.SwSOFTWARE.authMs.dto.api.DtoResponseApiWithoutData;
 import com.SwSOFTWARE.authMs.dto.auth.DtoCreateAuth;
 import com.SwSOFTWARE.authMs.dto.api.DtoResponseApiWithData;
 import com.SwSOFTWARE.authMs.dto.auth.DtoLogin;
@@ -13,6 +14,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.UUID;
 
 @RestController
 @RequestMapping(ApiBase.apiBase + "auth")
@@ -39,7 +42,7 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<DtoResponseApiWithData> createAuth(@Valid @RequestBody DtoCreateAuth request){
+    public ResponseEntity<DtoResponseApiWithData> createAuth(@Valid @RequestBody DtoCreateAuth request) throws Exception {
         return ResponseEntity.status(HttpStatus.CREATED).body(new DtoResponseApiWithData(
                 HttpStatus.CREATED.value(),
                 "Auth Created",
@@ -65,7 +68,7 @@ public class AuthController {
 
 
     @GetMapping("/{idAuth}")
-    public ResponseEntity<DtoResponseApiWithData> getAuth(@PathVariable Long idAuth){
+    public ResponseEntity<DtoResponseApiWithData> getAuth(@PathVariable UUID idAuth){
         return ResponseEntity.status(HttpStatus.OK).body(new DtoResponseApiWithData<>(
                 HttpStatus.OK.value(),
                 "Auth obtained",

@@ -1,8 +1,10 @@
 package com.SwSOFTWARE.authMs.service;
 
+import com.SwSOFTWARE.authMs.client.UserClient;
 import com.SwSOFTWARE.authMs.dto.auth.DtoAuth;
 import com.SwSOFTWARE.authMs.dto.auth.DtoCreateAuth;
 import com.SwSOFTWARE.authMs.dto.auth.DtoUpdateAuth;
+import com.SwSOFTWARE.authMs.dto.user.DtoCreateUser;
 import com.SwSOFTWARE.authMs.entity.AuthEntity;
 import com.SwSOFTWARE.authMs.entity.RoleEntity;
 import com.SwSOFTWARE.authMs.exception.auth.PasswordsDoNotMatchException;
@@ -10,16 +12,16 @@ import com.SwSOFTWARE.authMs.exception.auth.AuthEmailAlreadyInUseException;
 import com.SwSOFTWARE.authMs.exception.auth.AuthNotFoundException;
 import com.SwSOFTWARE.authMs.exception.auth.AuthUsernameAlreadyInUseException;
 import com.SwSOFTWARE.authMs.mapper.AuthMapper;
+import com.SwSOFTWARE.authMs.kafka.producer.Producer;
 import com.SwSOFTWARE.authMs.repository.AuthRepository;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import javax.management.relation.Role;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Set;
+import java.util.UUID;
 
 @Service
 public class AuthService {
@@ -28,13 +30,20 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final RoleService roleService;
     private final AuthMapper authMapper;
+    private final UserClient userClient;
+    private final Producer producer;
+    private final OutboxEventService outboxEventService;
 
     public AuthService(AuthRepository authRepository,PasswordEncoder passwordEncoder,RoleService roleService,
-                       AuthMapper authMapper){
+                       AuthMapper authMapper, UserClient userClient,Producer producer,OutboxEventService outboxEventService
+                      ){
         this.authRepository = authRepository;
         this.passwordEncoder = passwordEncoder;
         this.roleService = roleService;
         this.authMapper = authMapper;
+        this.userClient = userClient;
+        this.producer = producer;
+        this.outboxEventService = outboxEventService;
     }
 
     public List<DtoAuth> getAllAuth(Integer page, Integer size){
@@ -46,44 +55,45 @@ public class AuthService {
         return authRepository.findByUsername(username).orElseThrow(AuthNotFoundException::new);
     }
 
-    public AuthEntity getAuthById(Long id){
+    public AuthEntity getAuthById(UUID id){
         return authRepository.findById(id).orElseThrow(AuthNotFoundException::new);
     }
 
-    public DtoAuth getAuth(Long idAuth){
+    public DtoAuth getAuth(UUID idAuth){
         return authMapper.toDto(authRepository.findById(idAuth).orElseThrow(AuthNotFoundException::new));
     }
 
+    public DtoAuth createUser(DtoCreateAuth request) throws Exception {
 
-    public DtoAuth createUser(DtoCreateAuth request){
+        if(!request.password().equals(request.passwordRepeat())){
+            throw new PasswordsDoNotMatchException();
+        }
 
-            if(!request.password().equals(request.passwordRepeat())){
-                throw new PasswordsDoNotMatchException();
-            }
+        if(authRepository.existsByUsername(request.username())){
+            throw new AuthUsernameAlreadyInUseException();
+        }
 
-            if(authRepository.existsByUsername(request.username())){
-                throw new AuthUsernameAlreadyInUseException();
-            }
+        if(authRepository.existsByEmail(request.email())){
+            throw new AuthEmailAlreadyInUseException();
+        }
 
-            if(authRepository.existsByEmail(request.email())){
-                throw new AuthEmailAlreadyInUseException();
-            }
+        List<RoleEntity> roles = roleService.getEntityRolesByIds(request.idRoles());
 
-            List<RoleEntity> roles = roleService.getEntityRolesByIds(request.idRoles());
+        AuthEntity auth = AuthEntity.builder()
+                .username(request.username())
+                .password(passwordEncoder.encode(request.password()))
+                .email(request.email())
+                .active(false)
+                .createdAt(LocalDateTime.now())
+                .disabledAt( (request.active()) ? LocalDateTime.now() : null )
+                .roles(roles)
+                .build();
 
-            AuthEntity auth = AuthEntity.builder()
-                    .username(request.username())
-                    .password(passwordEncoder.encode(request.password()))
-                    .email(request.email())
-                    .active(request.active())
-                    .createdAt(LocalDateTime.now())
-                    .disabledAt( (request.active()) ? LocalDateTime.now() : null )
-                    .roles(roles)
-                    .build();
+        AuthEntity authEntity = authRepository.save(auth);
 
-            authRepository.save(auth);
+        outboxEventService.saveEvent(new DtoCreateUser(authEntity.getId(),request.name(), request.birthday(), request.active()));
 
-            return authMapper.toDto(auth);
+        return authMapper.toDto(auth);
     }
 
     public DtoAuth updateAuth(DtoUpdateAuth request){
@@ -107,5 +117,9 @@ public class AuthService {
         auth.setRoles(roles);
 
         return authMapper.toDto(authRepository.save(auth));
+    }
+
+    public void deleteAuth(UUID id){
+        authRepository.deleteById(id);
     }
 }

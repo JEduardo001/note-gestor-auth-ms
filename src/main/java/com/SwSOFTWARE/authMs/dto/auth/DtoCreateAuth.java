@@ -3,11 +3,16 @@ package com.SwSOFTWARE.authMs.dto.auth;
 
 import jakarta.validation.constraints.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 public record DtoCreateAuth(
         @NotBlank
         String username,
+        @NotBlank
+        String name,
+        @NotNull
+        LocalDateTime birthday,
         @NotBlank
         @Pattern(
                 regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&.#_\\-]).{8,35}$", // 1 upperCase, 1 lower case, 1 number 1 symbol

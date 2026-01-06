@@ -4,9 +4,10 @@ import com.SwSOFTWARE.authMs.dto.role.DtoRole;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 public record DtoAuth(
-        Long id,
+        UUID id,
         String username,
         String email,
         boolean active,
